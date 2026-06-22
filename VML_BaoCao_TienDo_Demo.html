@@ -190,9 +190,6 @@ table.mx td.nm:hover{color:var(--blue)}
 .scoreband .pin{position:absolute;top:-3px;width:3px;height:14px;background:#0E1B2A;border-radius:2px}
 .divlbl{font-size:13px;font-weight:700;color:var(--tx);margin:22px 0 12px;padding-bottom:7px;border-bottom:2px solid var(--bd);display:flex;align-items:center;gap:8px}
 .divlbl i{color:var(--teal)}
-.setbox{background:#fff;border:.5px solid var(--bd2);border-radius:10px;padding:12px 14px;margin-bottom:14px}
-.setbox label{font-size:11px;color:var(--sec);display:block;margin-bottom:6px}
-.setbox .row{display:flex;gap:8px}.setbox input{flex:1}
 .btn{border:none;background:var(--teal);color:#fff;font-family:inherit;font-size:12px;padding:8px 14px;border-radius:8px;cursor:pointer}
 .btn.ghost{background:#fff;border:.5px solid var(--bd2);color:var(--tx)}
 .chip.err{background:var(--bgDanger);color:var(--red)}
@@ -333,20 +330,13 @@ table.pg.wl tr.wc td{background:#FAFCFE}
       <button data-page="ct" onclick="showPage('ct')"><i class="ti ti-building-skyscraper"></i> Tiến độ công trình</button>
       <button data-page="dphq" onclick="showPage('dphq')"><i class="ti ti-users-group"></i> Điều phối &amp; Hiệu quả</button>
     </nav>
-    <button class="freset" style="margin:6px 4px" onclick="toggleSet()"><i class="ti ti-plug"></i> Nguồn dữ liệu</button>
     <div class="sftitle"><i class="ti ti-filter" style="font-size:14px"></i> Bộ lọc chung</div>
     <div id="filtBar"></div>
   </aside>
   <main class="main">
     <div class="titlebar">
-      <div style="display:flex;align-items:center;gap:10px"><span class="t" id="ttl">Tổng quan điều hành</span>
-        <span class="chip" id="srcChip" style="cursor:pointer" onclick="onChip()">● Demo (minh hoạ)</span></div>
+      <div style="display:flex;align-items:center;gap:10px"><span class="t" id="ttl">Tổng quan điều hành</span></div>
       <span class="frange" id="frange"><i class="ti ti-calendar"></i> Mốc: 19/01/2026</span>
-    </div>
-    <div class="setbox hide" id="setbox">
-      <label>Dán link Apps Script <code>/exec</code> (trả JSON các đầu việc từ Base/KHTH) để bật dữ liệu trực tiếp:</label>
-      <div class="row"><input class="fdate" id="execurl" placeholder="https://script.google.com/macros/s/.../exec"/>
-        <button class="btn" onclick="connect()">Kết nối</button><button class="btn ghost" onclick="toggleSet()">Đóng</button></div>
     </div>
 
     <!-- P1 -->
@@ -850,37 +840,7 @@ function normDate(v){if(!v)return "";const s=String(v).trim();let m=s.match(/(\d
 function stageIdxOf(name){const s=String(name||"").toLowerCase();for(let i=0;i<STAGES.length;i++){if(s.indexOf(STAGES[i].n.toLowerCase())>=0)return i;}
   if(/khảo sát/.test(s))return 0;if(/hssx|hồ sơ sản xuất/.test(s))return 2;if(/ycvt|yêu cầu vật/.test(s))return 3;if(/vật tư|cấp/.test(s))return 4;if(/sản xuất/.test(s))return 5;if(/kiểm tra|qc/.test(s))return 6;if(/giao/.test(s))return 7;if(/lắp/.test(s))return 8;if(/nghiệm thu/.test(s))return 9;if(/quyết toán/.test(s))return 10;return -1;}
 function computeStatus(khe,tte){if(normDate(tte))return "done";const d=parseD(normDate(khe));if(!d)return "cho";if(d<TODAY)return "tre";if(dday(d,TODAY)<=3)return "sap";return "lam";}
-function adapt(rows){
-  const tasks=[],byCt={};let tid=1;
-  rows.forEach(r=>{const ma=String(pick(r,CMAP.ma));if(!ma)return;const dot=String(pick(r,CMAP.dot)),ck=ma+"|"+dot;
-    const si=stageIdxOf(pick(r,CMAP.stage));const khe=normDate(pick(r,CMAP.khe)),tte=normDate(pick(r,CMAP.tte));
-    const status=String(pick(r,CMAP.status))||computeStatus(khe,tte);const stt=/hoàn|done|xong/i.test(status)?"done":/quá|trễ|tre/i.test(status)?"tre":/sắp|sap/i.test(status)?"sap":/chờ|cho|chưa/i.test(status)?"cho":computeStatus(khe,tte);
-    const t={id:tid++,ck,ma,ten:String(pick(r,CMAP.ten)),dot,stageIdx:si,stage:si>=0?STAGES[si].n:String(pick(r,CMAP.stage)),
-      dept:String(pick(r,CMAP.dept))||(si>=0?STAGES[si].dept:""),empId:String(pick(r,CMAP.emp)),empName:String(pick(r,CMAP.emp)),
-      kh_s:normDate(pick(r,CMAP.khs)),kh_e:khe,tt_s:normDate(pick(r,CMAP.tts)),tt_e:tte,status:stt,
-      sla:(si>=0?STAGES[si].sla*8:8),w:(si>=0?STAGES[si].w:1),prio:String(pick(r,CMAP.prio))||"Trung bình",reason:String(pick(r,CMAP.reason)),chenh:""};
-    tasks.push(t);(byCt[ck]=byCt[ck]||[]).push(t);});
-  const cts=Object.keys(byCt).map((ck,i)=>{const ts=byCt[ck],a=ts[0];const sch=STAGES.map((s,si)=>{const tk=ts.find(x=>x.stageIdx===si);return tk?{kh_s:tk.kh_s,kh_e:tk.kh_e,tt_s:tk.tt_s,tt_e:tk.tt_e,status:tk.status,chenh:""}:{kh_s:"",kh_e:"",tt_s:"",tt_e:"",status:"cho",chenh:""};});
-    const done=sch.filter(s=>s.status==="done").length;
-    return {id:i+1,ck,ma:a.ma,ten:a.ten,dot:a.dot,hangmuc:"",kl:"",sl:"",kd:"",nvkd:a.empId,qldh:"",diachi:"",khachhang:a.ten,prio:a.prio,kysign:"",camket:"",pct:Math.round(done/11*100),reason:a.reason,ghichu:"",giatri:0,sch};});
-  return {tasks,cts};
-}
-let USE_LIVE=false,DIAG="Dùng dữ liệu demo nhúng. Ngày tháng & roster nhân sự là minh hoạ để chốt thiết kế; chỉ số chất lượng cần chuẩn hoá trên Base.";
-function setChip(){const c=document.getElementById("srcChip");if(USE_LIVE){c.className="chip live";c.textContent="● Dữ liệu trực tiếp · bấm xem demo";}else if(localStorage.getItem("vml_exec")){c.className="chip err";c.textContent="● Demo (bấm xem lý do)";}else{c.className="chip";c.textContent="● Demo (minh hoạ)";}c.title=DIAG;}
-function onChip(){if(USE_LIVE){USE_LIVE=false;CTS=F.CTS;TASKS=F.TASKS;DIAG="Đang xem dữ liệu demo.";setChip();rerender();}else if(window._LIVE){USE_LIVE=true;CTS=window._LIVE.cts;TASKS=window._LIVE.tasks;setChip();rerender();}else{alert(DIAG);}}
-function toggleSet(){document.getElementById("setbox").classList.toggle("hide");}
-function connect(){const u=val("execurl").trim();if(!u){alert("Dán link /exec trước.");return;}localStorage.setItem("vml_exec",u);load();}
-function load(){const url=localStorage.getItem("vml_exec")||"";if(url){const i=document.getElementById("execurl");if(i)i.value=url;}
-  if(!url){DIAG="Chưa nối nguồn trực tiếp — dùng demo nhúng. Bấm ⚙ Nguồn dữ liệu để dán link Apps Script /exec.";USE_LIVE=false;CTS=F.CTS;TASKS=F.TASKS;setChip();return;}
-  fetch(url).then(r=>r.text()).then(txt=>{if(/<html|đăng nhập|sign in/i.test(txt)){DIAG="URL trả về trang đăng nhập → Deploy Apps Script: Who has access = ANYONE.";fail();return;}
-    let j;try{j=JSON.parse(txt);}catch(e){DIAG="Phản hồi không phải JSON (có thể 'GET OK' cũ) → Deploy phiên bản mới.";fail();return;}
-    const arr=j.data||j;if(!arr||!arr.length){DIAG="Kết nối OK nhưng Sheet chưa có dữ liệu (count=0).";fail();return;}
-    const mapped=adapt(arr);if(!mapped.cts.length){DIAG="Đọc "+arr.length+" dòng nhưng không gom được công trình — kiểm tra cột Mã công trình / tên cột trong map.";fail();return;}
-    window._LIVE=mapped;USE_LIVE=true;CTS=mapped.cts;TASKS=mapped.tasks;DIAG="Dữ liệu trực tiếp từ Apps Script ("+mapped.cts.length+" công trình · "+mapped.tasks.length+" đầu việc).";setChip();buildFilters();rerender();
-  }).catch(e=>{DIAG=/fetch|network|cors/i.test(e.message)?"Không gọi được URL (CORS/mạng) → mở thẳng /exec kiểm tra.":"Lỗi xử lý dữ liệu: "+e.message;fail();});}
-function fail(){USE_LIVE=false;window._LIVE=null;CTS=F.CTS;TASKS=F.TASKS;setChip();rerender();}
-
-function init(){buildFilters();updateRange();setChip();showPage("tq");load();}
+function init(){buildFilters();updateRange();showPage("tq");}
 init();
 </script>
 </body></html>
